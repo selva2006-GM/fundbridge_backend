@@ -1,0 +1,102 @@
+### ============================================
+### 1. REGISTER USER
+### ============================================
+
+POST http://localhost:3000/register
+Content-Type: application/json
+
+{
+    "username": "testuser123",
+    "email": "testuser123@gmail.com",
+    "password": "123456"
+}
+
+
+### ============================================
+### 2. LOGIN USER
+### ============================================
+
+POST http://localhost:3000/login
+Content-Type: application/json
+
+{
+    "email": "testuser123@gmail.com",
+    "password": "123456"
+}
+
+
+### ============================================
+### COPY TOKEN FROM LOGIN RESPONSE
+### AND PASTE IT BELOW
+### ============================================
+
+
+### ============================================
+### 3. GET PROFILE
+### ============================================
+
+GET http://localhost:3000/profile
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjE2LCJpYXQiOjE3ODQyMDUzMjgsImV4cCI6MTc4NDgxMDEyOH0.C5caBg_xWUPc3ZnHcNkh2sl8XW5x9Lec9ZpCIm-pGew
+
+
+### ============================================
+### 4. GET ALL CAMPAIGNS
+### No login required
+### ============================================
+
+GET http://localhost:3000/api/campaigns
+
+
+### ============================================
+### 5. CREATE CAMPAIGN
+### Login required
+### ============================================
+
+POST http://localhost:3000/api/campaigns
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjE2LCJpYXQiOjE3ODQyMDUzMjgsImV4cCI6MTc4NDgxMDEyOH0.C5caBg_xWUPc3ZnHcNkh2sl8XW5x9Lec9ZpCIm-pGew
+
+{
+    "title": "Help Students Get Laptops",
+    "description": "We want to provide laptops to students who cannot afford them.",
+    "category": "Education",
+    "goal_amount": 100000,
+    "image_url": "https://example.com/image.jpg",
+    "beneficiary_name": "Student Community",
+    "end_date": "2026-12-31"
+}
+
+
+### ============================================
+### 6. GET SINGLE CAMPAIGN
+### Change 1 to your campaign ID
+### ============================================
+
+GET http://localhost:3000/api/campaigns/2
+
+
+### ============================================
+### 7. UPDATE CAMPAIGN
+### Change 1 to your campaign ID
+### Login as the campaign owner
+### ============================================
+
+PUT http://localhost:3000/api/campaigns/2
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjE2LCJpYXQiOjE3ODQyMDUzMjgsImV4cCI6MTc4NDgxMDEyOH0.C5caBg_xWUPc3ZnHcNkh2sl8XW5x9Lec9ZpCIm-pGew
+
+{
+    "title": "Updated Laptop Campaign",
+    "description": "Updated campaign description",
+    "goal_amount": 150000,
+    "image_url": "https://example.com/new-image.jpg"
+}
+
+
+### ============================================
+### 8. DELETE CAMPAIGN
+### Do this LAST
+### ============================================
+
+DELETE http://localhost:3000/api/campaigns/3
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjE2LCJpYXQiOjE3ODQyMDUzMjgsImV4cCI6MTc4NDgxMDEyOH0.C5caBg_xWUPc3ZnHcNkh2sl8XW5x9Lec9ZpCIm-pGew
