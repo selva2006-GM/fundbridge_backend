@@ -26,7 +26,7 @@ router.get("/", async (req, res) => {
             FROM campaigns
             JOIN users
                 ON campaigns.user_id = users.id
-            WHERE 1 = 1
+            WHERE campaigns.end_date >= CURRENT_DATE
         `;
 
 

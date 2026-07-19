@@ -234,34 +234,63 @@ app.post(
 
 
 
-app.post("/login", async (req, res)=>{
+app.post("/login", async (req, res) => {
+    try {
+        const {
+            identifier,
+            password
+        } = req.body;
 
-    try{
-        const {email, password} = req.body;
-
-        if(!email || !password){
+        if (!identifier || !password) {
             return res.status(400).json({
-                message : "Email and password are required"
+                message:
+                    "Email/username and password are required"
             });
         }
 
+        const normalizedIdentifier =
+            identifier.trim().toLowerCase();
+
+        // Find user using email OR username
         const result = await pool.query(
-            `SELECT * FROM users WHERE email = $1`,
-            [email]
+            `
+            SELECT *
+            FROM users
+            WHERE LOWER(email) = $1
+               OR LOWER(username) = $1
+            `,
+            [normalizedIdentifier]
         );
-        if(result.rows.length === 0){
+
+        if (result.rows.length === 0) {
             return res.status(401).json({
-                message : "Invalid email or password"
+                message:
+                    "Invalid username/email or password"
             });
         }
 
         const user = result.rows[0];
 
-        const passwordMatch = await bcrypt.compare(password, user.password_hash);
+        const passwordMatch =
+            await bcrypt.compare(
+                password,
+                user.password_hash
+            );
 
-        if(!passwordMatch){
+        if (!passwordMatch) {
             return res.status(401).json({
-                message : "Invalid email or password"
+                message:
+                    "Invalid username/email or password"
+            });
+        }
+
+        // Optional: prevent login before email verification
+        if (!user.email_verified) {
+            return res.status(403).json({
+                message:
+                    "Please verify your email before logging in",
+                requiresVerification: true,
+                email: user.email
             });
         }
 
@@ -269,23 +298,30 @@ app.post("/login", async (req, res)=>{
             {
                 userId: user.id
             },
-            process.env.JWT_SECRET, 
+            process.env.JWT_SECRET,
             {
-                expiresIn : "7d"
+                expiresIn: "7d"
             }
         );
 
         res.status(200).json({
             message: "Login successful",
+
             token,
-            user : {
-                id : user.id,
-                username : user.username,
-                email : user.email
+
+            user: {
+                id: user.id,
+                username: user.username,
+                email: user.email
             }
         });
-    }catch(error){
-        console.error(error);
+
+    } catch (error) {
+        console.error(
+            "LOGIN ERROR:",
+            error
+        );
+
         res.status(500).json({
             message: "Server error"
         });
