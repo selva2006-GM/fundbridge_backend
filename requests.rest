@@ -100,3 +100,8 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjE2LCJpY
 
 DELETE http://localhost:3000/api/campaigns/3
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjE2LCJpYXQiOjE3ODQyMDUzMjgsImV4cCI6MTc4NDgxMDEyOH0.C5caBg_xWUPc3ZnHcNkh2sl8XW5x9Lec9ZpCIm-pGew
+
+
+
+###
+http://localhost:3000/api/campaigns?page=1&limit=6&sort=urgent

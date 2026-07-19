@@ -20,14 +20,14 @@ router.get("/", async (req, res) => {
         const values = [];
 
         let query = `
-            SELECT
-                campaigns.*,
-                users.username
-            FROM campaigns
-            JOIN users
-                ON campaigns.user_id = users.id
-            WHERE campaigns.end_date >= CURRENT_DATE
-        `;
+    SELECT
+        campaigns.*,
+        users.username
+    FROM campaigns
+    JOIN users
+        ON campaigns.user_id = users.id
+    WHERE campaigns.end_date::date >= CURRENT_DATE
+`;
 
 
         // SEARCH
