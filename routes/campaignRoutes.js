@@ -290,14 +290,22 @@ router.delete("/:id", authenticateToken, async (req, res) => {
 
 // GET CAMPAIGN DONATION DETAILS
 // GET ALL PUBLIC CAMPAIGNS
-router.get("/", async (req, res) => {
+// GET CAMPAIGN DONATION DETAILS
+router.get("/:id/donation-details", async (req, res) => {
     try {
+        const { id } = req.params;
+
         const result = await pool.query(
             `
             SELECT
-                c.*,
+                c.id,
+                c.title,
+                c.category,
+                c.goal_amount,
+                c.raised_amount,
+                c.end_date,
                 u.username,
-                u.full_name
+                p.razorpay_account_id
 
             FROM campaigns c
 
@@ -307,23 +315,28 @@ router.get("/", async (req, res) => {
             JOIN payout_details p
                 ON p.user_id = c.user_id
 
-            WHERE c.status = 'active'
-
+            WHERE c.id = $1
+            AND c.status = 'active'
             AND p.razorpay_account_id IS NOT NULL
-
             AND p.razorpay_account_status = 'connected'
-
-            ORDER BY c.created_at DESC
-            `
+            `,
+            [id]
         );
 
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                message:
+                    "Campaign not found or payout account not connected"
+            });
+        }
+
         return res.status(200).json({
-            campaigns: result.rows
+            campaign: result.rows[0]
         });
 
     } catch (error) {
         console.error(
-            "GET CAMPAIGNS ERROR:",
+            "GET DONATION DETAILS ERROR:",
             error
         );
 

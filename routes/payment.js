@@ -288,24 +288,17 @@ router.post(
             }
 
 
-            await client.query(
-                "BEGIN"
-            );
+            await client.query("BEGIN");
 
-
-            /*
-                Mark donation as successful
-            */
-
-            await client.query(
+            const updatedDonation = await client.query(
                 `
                 UPDATE donations
-
                 SET
                     razorpay_payment_id = $1,
                     payment_status = 'paid'
-
                 WHERE razorpay_order_id = $2
+                AND payment_status != 'paid'
+                RETURNING campaign_id, amount
                 `,
                 [
                     razorpay_payment_id,
@@ -313,11 +306,31 @@ router.post(
                 ]
             );
 
+            if (updatedDonation.rows.length === 0) {
+                await client.query("ROLLBACK");
 
+                return res.status(409).json({
+                    message: "Payment already processed."
+                });
+            }
+
+            const paidDonation = updatedDonation.rows[0];
+
+            // Increase campaign raised amount
             await client.query(
-                "COMMIT"
+                `
+                UPDATE campaigns
+                SET raised_amount =
+                    COALESCE(raised_amount, 0) + $1
+                WHERE id = $2
+                `,
+                [
+                    paidDonation.amount,
+                    paidDonation.campaign_id
+                ]
             );
 
+            await client.query("COMMIT");
 
             return res.json({
 
