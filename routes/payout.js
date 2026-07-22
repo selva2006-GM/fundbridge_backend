@@ -1,21 +1,26 @@
 const express = require("express");
+const jwt = require("jsonwebtoken");
+
 const pool = require("../database");
 const authenticateToken = require("../middleware/auth");
 
-const router  = express.Router();
+const {
+    createAndSendOTP,
+    verifyOTP
+} = require("../services/otpService");
+
+const router = express.Router();
 
 router.get("/", authenticateToken, async (req, res) => {
     try {
         const result = await pool.query(
             `
-            SELECT 
+            SELECT
                 id,
-                account_holder_name,
-                bank_name,
-                account_number,
-                ifsc_code,
-                upi_id,
-                payout_method
+                razorpay_account_id,
+                razorpay_account_status,
+                created_at,
+                updated_at
             FROM payout_details
             WHERE user_id = $1
             `,
@@ -30,135 +35,377 @@ router.get("/", authenticateToken, async (req, res) => {
             });
         }
 
-        // Mask account number
-        if (payout.account_number) {
-            const accountNumber =
-                String(payout.account_number);
-
-            payout.account_number =
-                "••••••••" +
-                accountNumber.slice(-4);
-        }
-
-        // Mask IFSC
-        if (payout.ifsc_code) {
-            payout.ifsc_code =
-                payout.ifsc_code.slice(0, 4) +
-                "••••••";
-        }
-
-        // Mask UPI
-        if (payout.upi_id) {
-            const [name, provider] =
-                payout.upi_id.split("@");
-
-            payout.upi_id =
-                `${name.slice(0, 2)}••••@${provider}`;
-        }
-
-        res.json({
+        
+        return res.json({
             payout
         });
 
     } catch (error) {
-        console.error(
-            "GET PAYOUT ERROR:",
-            error
-        );
+        console.error("GET PAYOUT ERROR:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
             message: "Server error"
         });
     }
 });
+router.put(
+    "/",
+    authenticateToken,
+    async (req, res) => {
+        try {
+            const userId = req.user.userId;
 
-router.put("/", authenticateToken, async (req, res) => {
-    try {
-        const {
-            account_holder_name,
-            bank_name,
-            account_number,
-            ifsc_code,
-            upi_id,
-            payout_method
-        } = req.body;
+            const {
+                razorpay_account_id,
+                razorpay_account_status
+            } = req.body;
 
-
-        const result = await pool.query(
-            `
-            INSERT INTO payout_details (
-                user_id,
-                account_holder_name,
-                bank_name,
-                account_number,
-                ifsc_code,
-                upi_id,
-                payout_method
-            )
-
-            VALUES (
-                $1, $2, $3, $4, $5, $6, $7
-            )
-
-            ON CONFLICT (user_id)
-
-            DO UPDATE SET
-
-                account_holder_name =
-                    EXCLUDED.account_holder_name,
-
-                bank_name =
-                    EXCLUDED.bank_name,
-
-                account_number =
-                    EXCLUDED.account_number,
-
-                ifsc_code =
-                    EXCLUDED.ifsc_code,
-
-                upi_id =
-                    EXCLUDED.upi_id,
-
-                payout_method =
-                    EXCLUDED.payout_method,
-
-                updated_at =
-                    CURRENT_TIMESTAMP
-
-            RETURNING *
-            `,
-            [
-                req.user.userId,
-                account_holder_name,
-                bank_name,
-                account_number,
-                ifsc_code,
-                upi_id,
-                payout_method
-            ]
-        );
+            const payoutEditToken =
+                req.headers[
+                    "x-payout-edit-token"
+                ];
 
 
-        res.json({
-            message:
-                "Payout details saved successfully",
+            if (!razorpay_account_id) {
+                return res.status(400).json({
+                    message:
+                        "Razorpay account ID is required."
+                });
+            }
 
-            payout: result.rows[0]
-        });
+
+            /*
+                If payout already exists,
+                require OTP verification before changing it
+            */
+
+            const existing =
+                await pool.query(
+                    `
+                    SELECT razorpay_account_id
+                    FROM payout_details
+                    WHERE user_id = $1
+                    `,
+                    [userId]
+                );
 
 
-    } catch (error) {
+            if (
+                existing.rows.length > 0 &&
+                existing.rows[0]
+                    .razorpay_account_id
+            ) {
 
-        console.error(
-            "SAVE PAYOUT ERROR:",
-            error
-        );
+                if (!payoutEditToken) {
+                    return res.status(403).json({
+                        message:
+                            "Verification required before changing payout account."
+                    });
+                }
 
-        res.status(500).json({
-            message: "Server error"
-        });
+
+                try {
+
+                    const decoded =
+                        jwt.verify(
+                            payoutEditToken,
+                            process.env.JWT_SECRET
+                        );
+
+
+                    if (
+                        decoded.userId !== userId ||
+                        decoded.purpose !==
+                            "payout_edit"
+                    ) {
+
+                        return res
+                            .status(403)
+                            .json({
+                                message:
+                                    "Invalid payout verification."
+                            });
+
+                    }
+
+                } catch (error) {
+
+                    return res
+                        .status(403)
+                        .json({
+                            message:
+                                "Verification expired. Please verify again."
+                        });
+
+                }
+            }
+
+
+            const result =
+                await pool.query(
+                    `
+                    INSERT INTO payout_details (
+                        user_id,
+                        razorpay_account_id,
+                        razorpay_account_status
+                    )
+
+                    VALUES (
+                        $1,
+                        $2,
+                        $3
+                    )
+
+                    ON CONFLICT (user_id)
+
+                    DO UPDATE SET
+
+                        razorpay_account_id =
+                            EXCLUDED.razorpay_account_id,
+
+                        razorpay_account_status =
+                            EXCLUDED.razorpay_account_status,
+
+                        updated_at =
+                            CURRENT_TIMESTAMP
+
+                    RETURNING
+                        id,
+                        razorpay_account_id,
+                        razorpay_account_status,
+                        created_at,
+                        updated_at
+                    `,
+                    [
+                        userId,
+                        razorpay_account_id,
+                        razorpay_account_status ||
+                            "pending"
+                    ]
+                );
+
+
+            return res.json({
+                message:
+                    "Payout account updated successfully.",
+
+                payout:
+                    result.rows[0]
+            });
+
+
+        } catch (error) {
+
+            console.error(
+                "SAVE PAYOUT ERROR:",
+                error
+            );
+
+
+            return res
+                .status(500)
+                .json({
+                    message:
+                        "Unable to save payout account."
+                });
+
+        }
     }
-});
+);
 
+
+// ==========================================
+// SEND OTP FOR PAYOUT EDITING
+// POST /api/payout/send-otp
+// ==========================================
+
+router.post(
+    "/send-otp",
+    authenticateToken,
+    async (req, res) => {
+
+        try {
+
+            const userId =
+                req.user.userId;
+
+
+            // Get logged-in user's email
+
+            const result = await pool.query(
+                `
+                SELECT email
+                FROM users
+                WHERE id = $1
+                `,
+                [userId]
+            );
+
+
+            if (result.rows.length === 0) {
+
+                return res.status(404).json({
+                    message: "User not found"
+                });
+
+            }
+
+
+            const email =
+                result.rows[0].email;
+
+
+            // Create and send OTP
+
+            await createAndSendOTP({
+                userId,
+                email,
+                purpose: "payout_edit"
+            });
+
+
+            return res.json({
+                message:
+                    "Verification code sent to your email."
+            });
+
+
+        } catch (error) {
+
+            console.error(
+                "SEND PAYOUT OTP ERROR:",
+                error
+            );
+
+
+            return res.status(500).json({
+                message:
+                    "Unable to send verification code."
+            });
+
+        }
+
+    }
+);
+
+
+
+
+// ==========================================
+// VERIFY OTP FOR PAYOUT EDITING
+// POST /api/payout/verify-otp
+// ==========================================
+
+router.post(
+    "/verify-otp",
+    authenticateToken,
+    async (req, res) => {
+
+        try {
+
+            const userId =
+                req.user.userId;
+
+            const { otp } = req.body;
+
+
+            if (!otp) {
+
+                return res.status(400).json({
+                    message:
+                        "Verification code is required."
+                });
+
+            }
+
+
+            // Get user's email
+
+            const result = await pool.query(
+                `
+                SELECT email
+                FROM users
+                WHERE id = $1
+                `,
+                [userId]
+            );
+
+
+            if (result.rows.length === 0) {
+
+                return res.status(404).json({
+                    message: "User not found"
+                });
+
+            }
+
+
+            const email =
+                result.rows[0].email;
+
+
+            // Verify OTP
+
+            const isValid =
+                await verifyOTP({
+                    email,
+                    otp,
+                    purpose: "payout_edit"
+                });
+
+
+            if (!isValid) {
+
+                return res.status(400).json({
+                    message:
+                        "Invalid or expired verification code."
+                });
+
+            }
+
+
+            // Create temporary authorization token
+
+            const payoutEditToken =
+                jwt.sign(
+                    {
+                        userId,
+                        purpose:
+                            "payout_edit"
+                    },
+                    process.env.JWT_SECRET,
+                    {
+                        expiresIn: "10m"
+                    }
+                );
+
+
+            return res.json({
+
+                message:
+                    "Identity verified successfully.",
+
+                payoutEditToken
+
+            });
+
+
+        } catch (error) {
+
+            console.error(
+                "VERIFY PAYOUT OTP ERROR:",
+                error
+            );
+
+
+            return res.status(500).json({
+                message:
+                    "Unable to verify verification code."
+            });
+
+        }
+
+    }
+);
 
 module.exports = router;

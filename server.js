@@ -1,17 +1,30 @@
 require("dotenv").config();
 
 const cors = require("cors");
-const express = require("express")
-const bcrypt = require('bcrypt')
-const pool = require("./database")
+const express = require("express");
+const bcrypt = require("bcrypt");
+const pool = require("./database");
 const jwt = require("jsonwebtoken");
+
 const authenticateToken = require("./middleware/auth");
+
 const campaignRoutes = require("./routes/campaignRoutes");
 const verificationRoutes = require("./routes/verificationRoutes");
 const payoutRoutes = require("./routes/payout");
-const {createAndSendOTP, verifyOTP } = require("./services/otpService");
+const paymentRoutes = require("./routes/payment");
+const passwordRoutes =
+    require("./routes/password");
 
-    
+const accountRoutes =
+require("./routes/account");
+
+
+const {
+    createAndSendOTP,
+    verifyOTP
+} = require("./services/otpService");
+
+
     
     
 const app = express()
@@ -20,7 +33,19 @@ app.use(cors())
 app.use(express.json())
 app.use("/api/campaigns", campaignRoutes);
 app.use("/api/payout", payoutRoutes);
+app.use(
+    "/api/payments",
+    paymentRoutes
+);
 app.use("/api/verification",verificationRoutes);
+app.use(
+    "/api/password",
+    passwordRoutes
+);
+app.use(
+    "/api/account",
+    accountRoutes
+);
 
 app.post("/register", async (req, res) => {
     try {

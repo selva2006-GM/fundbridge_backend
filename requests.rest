@@ -105,3 +105,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjE2LCJpY
 
 ###
 http://localhost:3000/api/campaigns?page=1&limit=6&sort=urgent
+
+
+###
+https://fundbridge-backend-gev4.onrender.com/api/campaigns

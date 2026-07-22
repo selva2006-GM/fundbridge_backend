@@ -6,140 +6,48 @@ const router = express.Router();
 
 
 // GET ALL CAMPAIGNS
+// GET ALL PUBLIC CAMPAIGNS
 router.get("/", async (req, res) => {
     try {
-        const page = Number(req.query.page) || 1;
-        const limit = Number(req.query.limit) || 6;
-
-        const search = req.query.search || "";
-        const category = req.query.category || "All";
-        const sort = req.query.sort || "urgent";
-
-        const offset = (page - 1) * limit;
-
-        const values = [];
-
-        let query = `
-    SELECT
-        campaigns.*,
-        users.username
-    FROM campaigns
-    JOIN users
-        ON campaigns.user_id = users.id
-    WHERE campaigns.end_date::date >= CURRENT_DATE
-`;
-
-
-        // SEARCH
-
-        if (search) {
-            values.push(`%${search}%`);
-
-            query += `
-                AND (
-                    campaigns.title ILIKE $${values.length}
-                    OR
-                    campaigns.description ILIKE $${values.length}
-                    OR
-                    campaigns.beneficiary_name ILIKE $${values.length}
-                )
-            `;
-        }
-
-
-        // CATEGORY
-
-        if (category !== "All") {
-            values.push(category);
-
-            query += `
-                AND campaigns.category = $${values.length}
-            `;
-        }
-
-
-        // SORTING
-
-        if (sort === "urgent") {
-            query += `
-                ORDER BY campaigns.end_date ASC
-            `;
-        }
-
-        else if (sort === "newest") {
-            query += `
-                ORDER BY campaigns.created_at DESC
-            `;
-        }
-
-        else if (sort === "youngest") {
-            query += `
-                ORDER BY campaigns.beneficiary_age ASC
-            `;
-        }
-
-        else if (sort === "oldest") {
-            query += `
-                ORDER BY campaigns.beneficiary_age DESC
-            `;
-        }
-
-        else if (sort === "goal_low") {
-            query += `
-                ORDER BY campaigns.goal_amount ASC
-            `;
-        }
-
-        else if (sort === "goal_high") {
-            query += `
-                ORDER BY campaigns.goal_amount DESC
-            `;
-        }
-
-
-        // PAGINATION
-
-        values.push(limit);
-
-        const limitPosition = values.length;
-
-        values.push(offset);
-
-        const offsetPosition = values.length;
-
-        query += `
-            LIMIT $${limitPosition}
-            OFFSET $${offsetPosition}
-        `;
-
-
         const result = await pool.query(
-            query,
-            values
+            `
+            SELECT
+                c.*,
+                u.username,
+                u.full_name
+
+            FROM campaigns c
+
+            JOIN users u
+                ON c.user_id = u.id
+
+            JOIN payout_details p
+                ON p.user_id = c.user_id
+
+            WHERE c.status = 'active'
+            AND p.razorpay_account_id IS NOT NULL
+            AND p.razorpay_account_status = 'connected'
+
+            ORDER BY c.created_at DESC
+            `
         );
 
-
-        res.status(200).json({
-            campaigns: result.rows,
-
-            hasMore:
-                result.rows.length === limit
+        return res.status(200).json({
+            campaigns: result.rows
         });
 
-
     } catch (error) {
-
         console.error(
             "GET CAMPAIGNS ERROR:",
             error
         );
 
-        res.status(500).json({
+        return res.status(500).json({
             message: "Server error"
         });
-
     }
 });
+
 
 
 // GET LOGGED-IN USER'S CAMPAIGNS
@@ -381,58 +289,48 @@ router.delete("/:id", authenticateToken, async (req, res) => {
 
 
 // GET CAMPAIGN DONATION DETAILS
-router.get("/:id/donation-details", async (req, res) => {
+// GET ALL PUBLIC CAMPAIGNS
+router.get("/", async (req, res) => {
     try {
-        const { id } = req.params;
-
         const result = await pool.query(
             `
             SELECT
-                campaigns.id,
-                campaigns.title,
-                campaigns.category,
-                campaigns.goal_amount,
-                campaigns.raised_amount,
+                c.*,
+                u.username,
+                u.full_name
 
-                payout_details.account_holder_name,
-                payout_details.bank_name,
-                payout_details.upi_id,
-                payout_details.payout_method
+            FROM campaigns c
 
-            FROM campaigns
+            JOIN users u
+                ON c.user_id = u.id
 
-            LEFT JOIN payout_details
-                ON campaigns.user_id = payout_details.user_id
+            JOIN payout_details p
+                ON p.user_id = c.user_id
 
-            WHERE campaigns.id = $1
-            `,
-            [id]
+            WHERE c.status = 'active'
+
+            AND p.razorpay_account_id IS NOT NULL
+
+            AND p.razorpay_account_status = 'connected'
+
+            ORDER BY c.created_at DESC
+            `
         );
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({
-                message: "Campaign not found"
-            });
-        }
-
-        res.status(200).json({
-            campaign: result.rows[0]
+        return res.status(200).json({
+            campaigns: result.rows
         });
 
     } catch (error) {
         console.error(
-            "DONATION DETAILS ERROR:",
+            "GET CAMPAIGNS ERROR:",
             error
         );
 
-        res.status(500).json({
+        return res.status(500).json({
             message: "Server error"
         });
     }
 });
-
-
-
-
 
 module.exports = router;
