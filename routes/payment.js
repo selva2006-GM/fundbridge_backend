@@ -5,7 +5,7 @@ const crypto = require("crypto");
 const pool = require("../database");
 
 const router = express.Router();
-
+const authenticateToken = require("../middleware/auth");
 
 const razorpay = new Razorpay({
     key_id:
@@ -26,6 +26,8 @@ router.post(
     async (req, res) => {
 
         try {
+
+            const userId = req.user.userId;
 
             const {
                 campaignId,
@@ -116,20 +118,22 @@ router.post(
                 `
                 INSERT INTO donations (
                     campaign_id,
+                    user_id,
                     amount,
                     razorpay_order_id,
                     payment_status
                 )
-
                 VALUES (
                     $1,
                     $2,
                     $3,
+                    $4,
                     'created'
                 )
                 `,
                 [
                     campaignId,
+                    userId,
                     donationAmount,
                     order.id
                 ]

@@ -111,4 +111,4 @@ http://localhost:3000/api/campaigns?page=1&limit=6&sort=urgent
 https://fundbridge-backend-gev4.onrender.com/api/campaigns
 
 ###
-http://localhost:3000/api/campaigns/1/donation-details
+http://localhost:3000/api/donations/my-donations

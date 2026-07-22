@@ -17,6 +17,7 @@ const passwordRoutes =
 
 const accountRoutes =
 require("./routes/account");
+const donationRoutes = require("./routes/donations");
 
 
 const {
@@ -25,8 +26,8 @@ const {
 } = require("./services/otpService");
 
 
-    
-    
+
+
 const app = express()
 
 app.use(cors())
@@ -42,6 +43,7 @@ app.use(
     "/api/password",
     passwordRoutes
 );
+app.use("/api/donations", donationRoutes);
 app.use(
     "/api/account",
     accountRoutes
