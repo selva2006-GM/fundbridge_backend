@@ -27,7 +27,7 @@ router.post(
 
         try {
 
-            const userId = req.user.userId;
+            const userId = req.user?.userId || null;
 
             const {
                 campaignId,

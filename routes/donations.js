@@ -4,7 +4,6 @@ const authenticateToken = require("../middleware/auth");
 
 const router = express.Router();
 
-
 router.get(
     "/my-donations",
     authenticateToken,
@@ -12,44 +11,46 @@ router.get(
         try {
             const userId = req.user.userId;
 
-            console.log(
-                "Fetching donations for user:",
-                userId
-            );
-
             const result = await pool.query(
                 `
                 SELECT
                     d.id,
+                    d.campaign_id,
                     d.amount,
                     d.payment_status,
+                    d.razorpay_order_id,
+                    d.razorpay_payment_id,
+                    d.transaction_id,
+                    d.donor_name,
+                    d.donor_email,
                     d.created_at,
-                    d.campaign_id,
-                    c.title AS campaign_title
+
+                    c.title AS campaign_title,
+                    c.image_url AS campaign_image,
+                    c.category AS campaign_category
+
                 FROM donations d
-                LEFT JOIN campaigns c
+
+                JOIN campaigns c
                     ON d.campaign_id = c.id
+
                 WHERE d.user_id = $1
+
                 ORDER BY d.created_at DESC
                 `,
                 [userId]
             );
-            
-            console.log("ALL DONATIONS:", result.rows);
-            console.log("JWT USER:", req.user);
-            console.log("JWT USER ID:", req.user.userId);
-            console.log("JWT USER ID TYPE:", typeof req.user.userId);
-            
-            res.json(result.rows);
+
+            return res.json(result.rows);
 
         } catch (error) {
             console.error(
-                "Fetch donations error:",
+                "GET MY DONATIONS ERROR:",
                 error
             );
 
-            res.status(500).json({
-                message: "Failed to fetch donations"
+            return res.status(500).json({
+                message: "Unable to fetch donations."
             });
         }
     }
