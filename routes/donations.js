@@ -14,29 +14,29 @@ router.get(
             const result = await pool.query(
                 `
                 SELECT
-                    d.id,
-                    d.campaign_id,
-                    d.amount,
-                    d.payment_status,
-                    d.razorpay_order_id,
-                    d.razorpay_payment_id,
-                    d.transaction_id,
-                    d.donor_name,
-                    d.donor_email,
-                    d.created_at,
+                d.id,
+                d.campaign_id,
+                d.amount,
+                d.payment_status,
+                d.razorpay_order_id,
+                d.razorpay_payment_id,
+                d.transaction_id,
+                d.donor_name,
+                d.donor_email,
+                d.created_at,
 
-                    c.title AS campaign_title,
-                    c.image_url AS campaign_image,
-                    c.category AS campaign_category
+                c.title AS campaign_title,
+                c.image_url AS campaign_image,
+                c.category AS campaign_category
 
-                FROM donations d
+            FROM donations d
 
-                JOIN campaigns c
-                    ON d.campaign_id = c.id
+            JOIN campaigns c
+                ON d.campaign_id = c.id
 
-                WHERE d.user_id = $1
+            WHERE c.user_id = $1 AND d.payment_status = 'paid'
 
-                ORDER BY d.created_at DESC
+            ORDER BY d.created_at DESC;
                 `,
                 [userId]
             );
