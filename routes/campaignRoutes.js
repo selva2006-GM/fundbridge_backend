@@ -4,7 +4,7 @@ const authenticateToken = require("../middleware/auth");
 
 const router = express.Router();
 
-// GET ALL PUBLIC CAMPAIGNS
+
 router.get("/", async (req, res) => {
     try {
         const {
@@ -27,10 +27,7 @@ router.get("/", async (req, res) => {
         ];
 
 
-        // =========================
-        // SEARCH
-        // =========================
-
+       
         if (search.trim()) {
             values.push(`%${search.trim()}%`);
 
@@ -46,10 +43,7 @@ router.get("/", async (req, res) => {
         }
 
 
-        // =========================
-        // CATEGORY
-        // =========================
-
+        
         if (category && category !== "All") {
             values.push(category);
 
@@ -58,10 +52,6 @@ router.get("/", async (req, res) => {
             );
         }
 
-
-        // =========================
-        // SORTING
-        // =========================
 
         let orderBy;
 
@@ -100,10 +90,6 @@ router.get("/", async (req, res) => {
         }
 
 
-        // =========================
-        // FETCH ONE EXTRA CAMPAIGN
-        // =========================
-        // This helps determine hasMore.
 
         values.push(limitNumber + 1);
         const limitIndex = values.length;
@@ -138,9 +124,7 @@ router.get("/", async (req, res) => {
         );
 
 
-        // If we received more than requested,
-        // another page exists.
-
+     
         const hasMore =
             result.rows.length > limitNumber;
 
@@ -169,7 +153,6 @@ router.get("/", async (req, res) => {
 });
 
 
-// GET LOGGED-IN USER'S CAMPAIGNS
 router.get("/my", authenticateToken, async (req, res) => {
     try {
         const result = await pool.query(
@@ -204,7 +187,6 @@ router.get("/my", authenticateToken, async (req, res) => {
 
 
 
-// GET SINGLE CAMPAIGN
 router.get("/:id", async (req, res) => {
     try {
         const { id } = req.params;
@@ -234,7 +216,7 @@ router.get("/:id", async (req, res) => {
 });
 
 
-// CREATE CAMPAIGN
+
 router.post("/", authenticateToken, async (req, res) => {
     try {
         const {
@@ -305,7 +287,7 @@ router.post("/", authenticateToken, async (req, res) => {
 });
 
 
-// UPDATE CAMPAIGN
+
 router.put("/:id", authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
@@ -369,7 +351,7 @@ router.put("/:id", authenticateToken, async (req, res) => {
 });
 
 
-// DELETE CAMPAIGN
+
 router.delete("/:id", authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
@@ -407,9 +389,6 @@ router.delete("/:id", authenticateToken, async (req, res) => {
 });
 
 
-// GET CAMPAIGN DONATION DETAILS
-// GET ALL PUBLIC CAMPAIGNS
-// GET CAMPAIGN DONATION DETAILS
 router.get("/:id/donation-details", async (req, res) => {
     try {
         const { id } = req.params;
