@@ -12,12 +12,6 @@ const {
 const router = express.Router();
 
 
-/*
-========================================
-SEND DELETE ACCOUNT OTP
-POST /api/account/delete/send-otp
-========================================
-*/
 
 router.post(
     "/delete/send-otp",
@@ -69,12 +63,6 @@ router.post(
 );
 
 
-/*
-========================================
-VERIFY DELETE ACCOUNT OTP
-POST /api/account/delete/verify-otp
-========================================
-*/
 
 router.post(
     "/delete/verify-otp",
@@ -162,12 +150,7 @@ router.post(
 );
 
 
-/*
-========================================
-DELETE ACCOUNT
-DELETE /api/account/delete
-========================================
-*/
+
 
 router.delete(
     "/delete",
