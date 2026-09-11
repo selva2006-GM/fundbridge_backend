@@ -65,17 +65,16 @@ app.post("/register", async (req, res) => {
         }
 
 
-        // Normalize email
+       
         const normalizedEmail =
             email.trim().toLowerCase();
 
 
-        // Hash password
+        
         const passwordHash =
             await bcrypt.hash(password, 10);
 
 
-        // Create user
         const result = await pool.query(
             `
             INSERT INTO users (
@@ -311,7 +310,7 @@ app.post("/login", async (req, res) => {
             });
         }
 
-        // Optional: prevent login before email verification
+      
         if (!user.email_verified) {
             return res.status(403).json({
                 message:

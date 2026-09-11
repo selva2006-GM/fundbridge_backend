@@ -13,7 +13,6 @@ const {
 const router = express.Router();
 
 
-// SEND PASSWORD CHANGE OTP
 
 router.post(
     "/send-otp",
@@ -65,7 +64,6 @@ router.post(
 );
 
 
-// VERIFY PASSWORD CHANGE OTP
 
 router.post(
     "/verify-otp",
@@ -146,7 +144,7 @@ router.post(
 );
 
 
-// CHANGE PASSWORD
+
 
 router.put(
     "/change",

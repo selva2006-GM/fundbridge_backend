@@ -38,8 +38,7 @@ async function createAndSendOTP({
         hashOTP(otp);
 
 
-    // Delete old OTPs for this purpose
-
+  
     await pool.query(
         `
         DELETE FROM email_otps
@@ -54,8 +53,7 @@ async function createAndSendOTP({
     );
 
 
-    // OTP expires after 10 minutes
-
+    
     await pool.query(
         `
         INSERT INTO email_otps (
@@ -138,7 +136,7 @@ async function verifyOTP({
     }
 
 
-    // OTP can only be used once
+   
 
     await pool.query(
         `

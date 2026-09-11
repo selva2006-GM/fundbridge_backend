@@ -16,10 +16,6 @@ const razorpay = new Razorpay({
 });
 
 
-// ========================================
-// CREATE RAZORPAY ORDER
-// POST /api/payments/create-order
-// ========================================
 
 router.post(
     "/create-order",
@@ -53,8 +49,6 @@ router.post(
             }
 
 
-            // Check campaign exists
-
             const campaignResult =
                 await pool.query(
                     `
@@ -78,11 +72,7 @@ router.post(
             }
 
 
-            /*
-                Razorpay uses paise.
-
-                ₹100 = 10000 paise
-            */
+            
 
             const amountInPaise =
                 Math.round(
@@ -90,8 +80,7 @@ router.post(
                 );
 
 
-            // Create Razorpay order
-
+          
             const order =
                 await razorpay.orders.create({
 
@@ -112,7 +101,6 @@ router.post(
                 });
 
 
-            // Save pending donation
 
             await pool.query(
                 `
@@ -177,10 +165,6 @@ router.post(
 );
 
 
-// ========================================
-// VERIFY RAZORPAY PAYMENT
-// POST /api/payments/verify
-// ========================================
 
 router.post(
     "/verify",
@@ -217,10 +201,7 @@ router.post(
             }
 
 
-            /*
-                Find the order created by
-                OUR backend.
-            */
+          
 
             const donationResult =
                 await client.query(
@@ -253,11 +234,6 @@ router.post(
                 donationResult.rows[0];
 
 
-            /*
-                Generate expected signature.
-
-                orderId | paymentId
-            */
 
             const expectedSignature =
                 crypto
@@ -275,9 +251,6 @@ router.post(
                     .digest("hex");
 
 
-            /*
-                Verify signature
-            */
 
             if (
                 expectedSignature !==
@@ -320,7 +293,6 @@ router.post(
 
             const paidDonation = updatedDonation.rows[0];
 
-            // Increase campaign raised amount
             await client.query(
                 `
                 UPDATE campaigns

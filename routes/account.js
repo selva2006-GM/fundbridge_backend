@@ -98,7 +98,7 @@ router.post(
 
             const email = result.rows[0].email;
 
-            // Verify OTP
+            
 
             const isValid = await verifyOTP({
                 email,
@@ -113,7 +113,7 @@ router.post(
                 });
             }
 
-            // Create temporary account deletion token
+           
 
             const accountDeleteToken =
                 jwt.sign(
@@ -176,7 +176,7 @@ router.delete(
             }
 
 
-            // Verify temporary deletion token
+           
 
             let decoded;
 
@@ -194,7 +194,7 @@ router.delete(
             }
 
 
-            // Make sure token belongs to this user
+           
 
             if (
                 decoded.userId !== userId ||
@@ -208,16 +208,11 @@ router.delete(
             }
 
 
-            /*
-                Start database transaction
-            */
+            
 
             await client.query("BEGIN");
 
 
-            /*
-                Delete OTP records first
-            */
 
             await client.query(
                 `
@@ -228,10 +223,6 @@ router.delete(
             );
 
 
-            /*
-                Delete payout details
-            */
-
             await client.query(
                 `
                 DELETE FROM payout_details
@@ -241,10 +232,7 @@ router.delete(
             );
 
 
-            /*
-                Finally delete user
-            */
-
+           
             const result =
                 await client.query(
                     `

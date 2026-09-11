@@ -5,7 +5,7 @@ const authenticateToken = require("../middleware/auth");
 const router = express.Router();
 
 
-// GET VERIFICATION STATUS
+
 router.get("/status", authenticateToken, async (req, res) => {
     try {
         const result = await pool.query(
@@ -37,7 +37,7 @@ router.get("/status", authenticateToken, async (req, res) => {
 });
 
 
-// MOCK DIGILOCKER VERIFICATION
+
 router.post(
     "/mock-digilocker",
     authenticateToken,

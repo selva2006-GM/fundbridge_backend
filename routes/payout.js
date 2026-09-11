@@ -74,11 +74,6 @@ router.put(
             }
 
 
-            /*
-                If payout already exists,
-                require OTP verification before changing it
-            */
-
             const existing =
                 await pool.query(
                     `
@@ -213,12 +208,6 @@ router.put(
     }
 );
 
-
-// ==========================================
-// SEND OTP FOR PAYOUT EDITING
-// POST /api/payout/send-otp
-// ==========================================
-
 router.post(
     "/send-otp",
     authenticateToken,
@@ -255,8 +244,6 @@ router.post(
                 result.rows[0].email;
 
 
-            // Create and send OTP
-
             await createAndSendOTP({
                 userId,
                 email,
@@ -291,11 +278,6 @@ router.post(
 
 
 
-// ==========================================
-// VERIFY OTP FOR PAYOUT EDITING
-// POST /api/payout/verify-otp
-// ==========================================
-
 router.post(
     "/verify-otp",
     authenticateToken,
@@ -318,8 +300,6 @@ router.post(
 
             }
 
-
-            // Get user's email
 
             const result = await pool.query(
                 `
@@ -344,7 +324,7 @@ router.post(
                 result.rows[0].email;
 
 
-            // Verify OTP
+            
 
             const isValid =
                 await verifyOTP({
@@ -364,7 +344,7 @@ router.post(
             }
 
 
-            // Create temporary authorization token
+          
 
             const payoutEditToken =
                 jwt.sign(

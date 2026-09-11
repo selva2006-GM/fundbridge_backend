@@ -27,7 +27,7 @@ async function sendOTPEmail({
     const { data, error } =
         await resend.emails.send({
 
-            // Development sender
+            
             from: "FundBridge <contact@selvacodes.online>",
 
             to: email,
